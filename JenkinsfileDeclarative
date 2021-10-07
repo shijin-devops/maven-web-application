@@ -1,83 +1,26 @@
-pipeline{
+pipeline {
+    agent {label 'node'}
+    options { timestamps () }
+    tools {maven 'maven3.6.2'}
 
-agent any
-
-tools
-{
-  maven 'maven3.6.3'
-
+    stages {
+        stage('GitClone') {
+            steps {
+                git branch: 'development', url: 'https://github.com/shijin-devops/maven-web-application.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh "mvn clean package"
+            }
+    }
+    
+    stage('Deploy') {
+            steps {
+                sshagent(['1e5d27ab-c6e8-4e68-b885-96f5d1db2430']) {
+              sh "scp -o StrictHostKeyChecking=no /home/centos/node/workspace/Pipeline-declarative/target/maven-web-application.war centos@3.143.211.140:/opt/apache-tomcat-9.0.53/webapps/ "
 }
-
-triggers{
- pollSCM('* * * * *')
+            }
+    }
 }
-
-options{
-    timestamps()
-    buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '2', daysToKeepStr: '', numToKeepStr: '2'))
-}
-
- stages{
-   
-   stage('CheckoutCode')
-   {
-     steps{
-	 git branch: 'development', credentialsId: '8e348aa2-9531-4dbe-863d-1adb64897470', url: 'https://github.com/MithunTechnologiesDevOps/maven-web-application.git'
-	 }
-   }
-   
-   stage('Build')
-   {
-    steps{
-	  sh "mvn clean package"
-	 }
-   }
-   
-    stage('ExecuteSonarQubeReport')
-   {
-     steps{
-	  sh "mvn sonar:sonar"
-	 }
-   }
-   
-   stage('UploadArtifactintoNexus')
-   {
-     steps{
-	  sh "mvn deploy"
-	 }
-   }
-   
-  stage('DeployAppIntoTomcat')
- {
-   steps{
-  sshagent(['2b7b0c6a-5eff-4f4a-82c3-3630f91c70b5']) {
-  sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.1.222.74:/opt/apache-tomcat-9.0.41/webapps/"
-  }
- }
- }
- 
-  
- 
- }
- 
- post{
- 
- 
- success{
- mail bcc: 'devopstrainingblr@gmail.com', body: '''BuildOver!....
-
- Regards,
- Mithun Technologies,
- 9980923226''', cc: 'devopstrainingblr@gmail.com', from: '', replyTo: '', subject: 'BuildOver!!', to: 'devopstrainingblr@gmail.com'
- }
- 
- failure{
- mail bcc: 'devopstrainingblr@gmail.com', body: '''BuildOver!....
-
- Regards,
- Mithun Technologies,
- 9980923226''', cc: 'devopstrainingblr@gmail.com', from: '', replyTo: '', subject: 'BuildOver!!', to: 'devopstrainingblr@gmail.com'
- }
- 
- }
 }
