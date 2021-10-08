@@ -12,7 +12,7 @@ pipeline {
         }
         stage('Build') {
             steps {
-                build('package')
+                build("package")
             }
     }
     
